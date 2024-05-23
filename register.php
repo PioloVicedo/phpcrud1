@@ -1,8 +1,8 @@
 <?php
-// session_start();
-// if (empty($_SESSION['user'])) {
-//     header('location:login.php');
-// }
+ session_start();
+ if (empty($_SESSION['user'])) {
+     header('location:login.php');
+ }
 require_once('classes/database.php');
 $con = new database();
 $error = "";
@@ -14,30 +14,26 @@ if (isset($_POST['multisave'])) {
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
     
     // Getting the personal information
-    $firstname = $_POST['firstname'];
-    $lastname = $_POST['lastname'];
-    $birthday = $_POST['birthday'];
+    $firstname = $_POST['first_name'];
+    $lastname = $_POST['last_name'];
+    $birthday = $_POST['birthdate'];
     $sex = $_POST['sex'];
   
     // Getting the address information
     $street = $_POST['user_street'];
-    $barangay = $_POST['barangay_text'];
-    $city = $_POST['city_text'];
-    $province = $_POST['region_text'];
+    $barangay = $_POST['user_barangay'];
+    $city = $_POST['user_city'];
+    $province = $_POST['user_province'];
 
    // Handle file upload
    $target_dir = "uploads/";
    $original_file_name = basename($_FILES["profile_picture"]["name"]);
-   
    // NEW CODE: Initialize $new_file_name with $original_file_name
     $new_file_name = $original_file_name; 
-   
-   
     $target_file = $target_dir . $original_file_name;
     $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
     $uploadOk = 1;
    
-   // Check if file already exists and rename if necessary
  // Check if file already exists and rename if necessary
  if (file_exists($target_file)) {
    // Generate a unique file name by appending a timestamp
@@ -46,7 +42,7 @@ if (isset($_POST['multisave'])) {
  } else {
    // Update $target_file with the original file name
    $target_file = $target_dir . $original_file_name;
-}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
     // Check if file is an actual image or fake image
     $check = getimagesize($_FILES["profile_picture"]["tmp_name"]);
     if ($check === false) {
@@ -100,8 +96,6 @@ if (isset($_POST['multisave'])) {
 }
 ?>
 
-
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -124,6 +118,7 @@ if (isset($_POST['multisave'])) {
   </style>
 </head>
 <body>
+<?php include('includes/navbar.php'); ?>
 <div class="container custom-container rounded-3 shadow my-5 p-3 px-5">
   <h3 class="text-center mt-4">Registration Form</h3>
   <form id="registration-form" method="post" action="" enctype="multipart/form-data" novalidate>
@@ -141,9 +136,10 @@ if (isset($_POST['multisave'])) {
         </div>
           <div class="form-group">
             <label for="email">Email:</label>
-            <input type="email" class="form-control" name="email" placeholder="Enter email" required>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Enter email" required>
             <div class="valid-feedback">Looks good!</div>
             <div class="invalid-feedback">Please enter a valid email.</div>
+            <div id="emailFeedback" class="invalid-feedback"></div> <!-- New feedback div -->
           </div>
           <div class="form-group">
             <label for="password">Password:</label>
@@ -158,6 +154,7 @@ if (isset($_POST['multisave'])) {
             <div class="valid-feedback">Looks good!</div>
             <div class="invalid-feedback">Please confirm your password.</div>
           </div>
+
         </div>
       </div>
       <button type="button" id="nextButton" class="btn btn-primary mt-3" onclick="nextStep()">Next</button>
@@ -214,7 +211,6 @@ if (isset($_POST['multisave'])) {
     </div>
     </div>
 
-
     <!-- Step 3 -->
     <div class="form-step" id="step-3">
       <div class="card mt-4">
@@ -268,6 +264,7 @@ if (isset($_POST['multisave'])) {
 <script src="./bootstrap-5.3.3-dist/js/bootstrap.js"></script>
 <!-- Script for Address Selector -->
 <script src="ph-address-selector.js"></script>
+<!-- AJAX for live checking of existing usernames -->
 <script>
 $(document).ready(function(){
     $('#username').on('input', function(){
@@ -300,6 +297,40 @@ $(document).ready(function(){
 
 </script>
 
+<script>
+$(document).ready(function(){
+    $('#email').on('input', function(){
+        var email = $(this).val();
+        if(email.length > 0) {
+            $.ajax({
+                url: 'check_email.php',
+                method: 'POST',
+                data: {email: email},
+                dataType: 'json',
+                success: function(response) {
+                    if(response.exists) {
+                        $('#email').removeClass('is-valid').addClass('is-invalid');
+                        $('#emailFeedback').text('Email is already taken.');
+                        $('#nextButton').prop('disabled', true); // Disable the Next button
+                    } else {
+                        $('#email').removeClass('is-invalid').addClass('is-valid');
+                        $('#emailFeedback').text('');
+                        $('#nextButton').prop('disabled', false); // Enable the Next button
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX Error:', status, error);
+                }
+            });
+        } else {
+            $('#email').removeClass('is-valid is-invalid');
+            $('#emailFeedback').text('');
+            $('#nextButton').prop('disabled', false); // Enable the Next button if email is empty
+        }
+    });
+});
+</script>
+
 <!-- Script for Form Validation -->
 <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -307,7 +338,6 @@ $(document).ready(function(){
       const birthdayInput = document.getElementById("birthday");
       const steps = document.querySelectorAll(".form-step");
       let currentStep = 0;
-
 
   
       // Set the max attribute of the birthday input to today's date
@@ -421,7 +451,6 @@ function validateStep(step) {
             event.preventDefault(); // Prevent form submission
         }
     });
-
 
       
     
